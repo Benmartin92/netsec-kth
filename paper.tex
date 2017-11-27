@@ -1,0 +1,76 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2345678901234567890123456789012345678901234567890123456789012345678901234567890
+%        1         2         3         4         5         6         7         8
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}  % Comment this line out
+                                                          % if you need a4paper
+%\documentclass[a4paper, 10pt, conference]{ieeeconf}      % Use this line for a4
+                                                          % paper
+
+\IEEEoverridecommandlockouts                              % This command is only
+                                                          % needed if you want to
+                                                          % use the \thanks command
+                                                          \usepackage[utf8]{inputenc}
+\usepackage[utf8]{inputenc}
+\overrideIEEEmargins
+% See the \addtolength command later in the file to balance the column lengths
+% on the last page of the document
+
+
+
+% The following packages can be found on http:\\www.ctan.org
+%\usepackage{graphics} % for pdf, bitmapped graphics files
+%\usepackage{epsfig} % for postscript graphics files
+%\usepackage{mathptmx} % assumes new font selection scheme installed
+%\usepackage{times} % assumes new font selection scheme installed
+\usepackage{amsmath} % assumes amsmath package installed
+\usepackage{amssymb}  % assumes amsmath package installed
+\usepackage{fancyhdr}
+\setlength{\headheight}{15.2pt}
+\usepackage[]{algorithm2e}
+\usepackage{url}
+
+\newtheorem{thm}{Theorem}
+\newtheorem{lem}{Lemma}
+\newtheorem{defi}{Definition}
+\newtheorem{prop}{Proposition}
+
+\title{\LARGE \bf
+%modif
+On the vulnerabilities of the DHCP protocol
+}
+
+\author{Benjámin Martin Seregi$^{1}$% <-this % stops a space
+% \thanks{*This work was not supported by any organization}% <-this % stops a space
+\thanks{$^{1}$ e-mail: seregi@kth.se}%
+}
+
+\begin{document}
+
+
+\maketitle
+\thispagestyle{fancy}
+\fancyhf{}
+\chead{KTH Royal Institute of Technology | EP2510, Fall 2017, Period 2 | \today}
+
+\begin{abstract}
+
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%Describe the background for chosen area that is going to be investigated. Write a short description of the area that is going to be %investigated. It is a brief description of the necessary background knowledge of the problem area and for carrying out the project.
+The Dynamic Host Configuration Protocol (DHCP) is a widely used protocol for dynamically distributing Internet (IP) addresses \cite{dhcprfc}. DHCP works in a client-server architecture where the client (DHCP client) requests an IP address and the server (DHCP server) allocates IPs from the pool of available addresses. The communication between these two entities is unauthenticated which imposes several security issues. Rogue DHCP server can be easily set up that might offer the clients malicious default gateways or DNS servers (see \cite{dhcprfc}, DHCPOFFER message) that can lead to denial-of-service or man-in-the middle attacks. In addition, the lack of authentication allows the attacker to exhaust the pool of available addresses by continuously requesting new IPs using fake MAC addresses and request DHCP operations (e.g. DHCP lease) on behalf of other hosts by fabricating DHCP messages with sniffed MAC addresses.
+
+\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{IEEEtran}
+\bibliography{ref.bib}
+\end{document}
