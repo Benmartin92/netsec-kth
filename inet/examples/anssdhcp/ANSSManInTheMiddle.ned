@@ -19,13 +19,13 @@ package inet.examples.anssdhcp;
 
 import inet.networklayer.configurator.ipv4.IPv4NetworkConfigurator;
 import inet.node.ethernet.Eth100M;
+import inet.node.ethernet.Eth1G;
 import inet.node.inet.Router;
 import inet.node.inet.StandardHost;
 import inet.node.inet.WirelessHost;
 import inet.node.internetcloud.InternetCloud;
 import inet.node.wireless.AccessPoint;
 import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
-import ned.DatarateChannel;
 
 
 network ANSSManInTheMiddle
@@ -68,7 +68,7 @@ network ANSSManInTheMiddle
         rogueGateway.pppg++ <--> Eth100M <--> Internet.pppg++;
         remoteServer.pppg++ <--> Eth100M <--> Internet.pppg++;
         dhcpServer.ethg++ <--> Eth100M <--> ap.ethg++;
-        rogueDHCPServer.ethg++ <--> Eth100M <--> ap.ethg++;
+        rogueDHCPServer.ethg++ <--> Eth1G <--> ap.ethg++;
         rogueGateway.ethg++ <--> Eth100M <--> ap.ethg++;
 }
 
