@@ -49,6 +49,9 @@ void DHCPServer::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         startTimer = new cMessage("Start DHCP server", START_DHCP);
         startTime = par("startTime");
+        protectedMode = par("protectedMode");
+        tokenizeAddresses(par("trustedDNSServers").stringValue(), trustedDNS);
+        tokenizeAddresses(par("trustedGateways").stringValue(), trustedGateways);
     }
     else if (stage == INITSTAGE_APPLICATION_LAYER) {
         numSent = 0;
@@ -228,10 +231,19 @@ void DHCPServer::processDHCPMessage(DHCPMessage *packet)
                     // std::cout << "init-reboot" << endl;
                     IPv4Address requestedAddress = packet->getOptions().getRequestedIp();
                     auto it = leased.find(requestedAddress);
+                    // if DHCP server has no record of the requested IP, then it must remain silent
+                    // and may output a warning to the network admin
                     if (it == leased.end()) {
-                        // if DHCP server has no record of the requested IP, then it must remain silent
-                        // and may output a warning to the network admin
-                        EV_WARN << "DHCP server has no record of IP " << requestedAddress << "." << endl;
+                        // In protected mode, this means that the client requested a verification of the DNS and gateway addresses
+                        // it has been offered by another DHCP server (which might be a rogue DHCP server)
+                        if (protectedMode && !checkIfTrustedAddresses(packet)) {
+                            EV_WARN << "A client has possibly received a DHCPOFFER from a rogue DHCP server" << endl;
+                            // By sending a NAK we signal that the client should not start communicating with the DNS
+                            // and gateway servers.
+                            sendNAK(packet);
+                        }
+                        else
+                            EV_WARN << "DHCP server has no record of IP " << requestedAddress << "." << endl;
                     }
                     else if (IPv4Address::maskedAddrAreEqual(requestedAddress, it->second.ip, subnetMask)) {    // on the same network
                         DHCPLease *lease = &it->second;
@@ -279,6 +291,26 @@ void DHCPServer::processDHCPMessage(DHCPMessage *packet)
 
     numReceived++;
 }
+
+
+bool DHCPServer::checkIfTrustedAddresses(DHCPMessage *msg)
+{
+    DHCPOptions& options = msg->getOptions();
+    int dnsArraySize = options.getDnsArraySize();
+    for (int i = 0; i < dnsArraySize; i++) {
+        IPv4Address addr = options.getDns(i);
+        if (std::find(trustedDNS.begin(), trustedDNS.end(), addr) == trustedDNS.end()) // addr is not trusted, return false
+            return false;
+    }
+    int routerArraySize = options.getRouterArraySize();
+    for (int i = 0; i < routerArraySize; i++) {
+        IPv4Address addr = options.getRouter(i);
+        if (std::find(trustedGateways.begin(), trustedGateways.end(), addr) == trustedGateways.end()) // addr is not trusted, return false
+            return false;
+    }
+    return true;
+}
+
 
 void DHCPServer::sendNAK(DHCPMessage *msg)
 {
@@ -531,6 +563,22 @@ void DHCPServer::stopApp()
     ie = nullptr;
     cancelEvent(startTimer);
     // socket.close(); TODO:
+}
+
+
+void DHCPServer::tokenizeAddresses(const char *addresses, std::vector<IPv4Address>& tokenizedAddresses)
+{
+    int size = strlen(addresses);
+    if (size > 0) {
+        char *cstrAddr = new char[size + 1];
+        strcpy(cstrAddr, addresses);
+        char *p = strtok(cstrAddr, ",");
+        while (p) {
+            tokenizedAddresses.push_back(IPv4Address(p));
+            p = strtok(NULL, ",");
+        }
+        delete cstrAddr;
+    }
 }
 
 bool DHCPServer::handleOperationStage(LifecycleOperation *operation, int stage, IDoneCallback *doneCallback)

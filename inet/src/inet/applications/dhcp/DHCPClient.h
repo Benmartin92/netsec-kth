@@ -42,6 +42,13 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
         WAIT_OFFER, WAIT_ACK, T1, T2, LEASE_TIMEOUT, START_DHCP
     };
 
+    //
+    // proctedMode = true means that DHCP checks if the provided gateway and DNS
+    // server addresses are valid, that is, if they are malicious DNS or gateway
+    // addresses provided by a rogue DHCP server.
+    //
+    bool protectedMode = false;
+
     // DHCP client states (RFC 2131, Figure 5: state transition diagram)
     enum ClientState {
         IDLE, INIT, INIT_REBOOT, REBOOTING, SELECTING, REQUESTING, BOUND, RENEWING, REBINDING
@@ -126,7 +133,7 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
      * e.g., system reboot, or (c) extending the lease on a particular
      * network address.
      */
-    virtual void sendRequest();
+    virtual void sendRequest(DHCPMessage *dhcpOffer);
 
     /*
      * Client to server indicating network address is already in use.

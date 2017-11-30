@@ -41,6 +41,7 @@ DHCPClient::~DHCPClient()
 void DHCPClient::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
+        protectedMode = par("protectedMode");
         timerT1 = new cMessage("T1 Timer", T1);
         timerT2 = new cMessage("T2 Timer", T2);
         timerTo = new cMessage("DHCP Timeout");
@@ -75,6 +76,7 @@ void DHCPClient::initialize(int stage)
 
         // get the routing table to update and subscribe it to the blackboard
         irt = getModuleFromPar<IIPv4RoutingTable>(par("routingTableModule"), this);
+
         // set client to idle state
         clientState = IDLE;
         // get the interface to configure
@@ -84,6 +86,12 @@ void DHCPClient::initialize(int stage)
             // grab the interface MAC address
             macAddress = ie->getMacAddress();
             startApp();
+        }
+    }
+    else if (stage == INITSTAGE_LAST) {
+        while (irt->getNumRoutes() > 0) {
+            IPv4Route *e = irt->getRoute(0);
+            irt->deleteRoute(e);
         }
     }
 }
@@ -240,7 +248,7 @@ void DHCPClient::handleTimer(cMessage *msg)
         EV_DETAIL << "T1 expired. Starting RENEWING state." << endl;
         clientState = RENEWING;
         scheduleTimerTO(WAIT_ACK);
-        sendRequest();
+        sendRequest(nullptr);
     }
     else if (category == T2 && clientState == RENEWING) {
         EV_DETAIL << "T2 expired. Starting REBINDING state." << endl;
@@ -250,7 +258,7 @@ void DHCPClient::handleTimer(cMessage *msg)
         cancelEvent(timerTo);
         cancelEvent(leaseTimer);
 
-        sendRequest();
+        sendRequest(nullptr);
         scheduleTimerTO(WAIT_ACK);
     }
     else if (category == T2) {
@@ -385,7 +393,7 @@ void DHCPClient::initClient()
 
 void DHCPClient::initRebootedClient()
 {
-    sendRequest();
+    sendRequest(nullptr);
     scheduleTimerTO(WAIT_ACK);
     clientState = REBOOTING;
 }
@@ -416,7 +424,7 @@ void DHCPClient::handleDHCPMessage(DHCPMessage *msg)
                 scheduleTimerTO(WAIT_ACK);
                 clientState = REQUESTING;
                 recordOffer(msg);
-                sendRequest();    // we accept the first offer
+                sendRequest(msg);    // we accept the first offer
             }
             else
                 EV_WARN << "Client is in SELECTING and the arriving packet is not a DHCPOFFER, dropping." << endl;
@@ -497,6 +505,8 @@ void DHCPClient::handleDHCPMessage(DHCPMessage *msg)
     }
 }
 
+
+
 void DHCPClient::receiveSignal(cComponent *source, int signalID, cObject *obj, cObject *details)
 {
     Enter_Method_Silent();
@@ -517,7 +527,7 @@ void DHCPClient::receiveSignal(cComponent *source, int signalID, cObject *obj, c
     }
 }
 
-void DHCPClient::sendRequest()
+void DHCPClient::sendRequest(DHCPMessage *dhcpOffer)
 {
     // setting the xid
     xid = intuniform(0, RAND_MAX);    // generating a new xid for each transmission
@@ -554,9 +564,24 @@ void DHCPClient::sendRequest()
         sendToUDP(request, clientPort, IPv4Address::ALLONES_ADDRESS, serverPort);
     }
     else if (clientState == REQUESTING) {
+        ASSERT(dhcpOffer != nullptr);
         request->getOptions().setServerIdentifier(lease->serverId);
         request->getOptions().setRequestedIp(lease->ip);
         request->setCiaddr(IPv4Address());    // zero
+        // In protected mode, we fill the request with the offered DNS and gateway addresses in order to give the chance to the other
+        // servers to verify them
+        if (protectedMode) {
+            DHCPOptions& requestOptions = request->getOptions();
+            DHCPOptions& offerOptions = dhcpOffer->getOptions();
+            int dnsArraySize = offerOptions.getDnsArraySize();
+            int routerArraySize = offerOptions.getRouterArraySize();
+            requestOptions.setDnsArraySize(dnsArraySize);
+            requestOptions.setRouterArraySize(routerArraySize);
+            for (int i = 0; i < dnsArraySize; i++)
+                requestOptions.setDns(i, offerOptions.getDns(i));
+            for (int i = 0; i < routerArraySize; i++)
+                requestOptions.setRouter(i, offerOptions.getRouter(i));
+        }
         EV_INFO << "Sending DHCPREQUEST asking for IP " << lease->ip << " via broadcast." << endl;
         sendToUDP(request, clientPort, IPv4Address::ALLONES_ADDRESS, serverPort);
     }

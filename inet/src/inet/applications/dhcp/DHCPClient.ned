@@ -31,6 +31,7 @@ import inet.applications.contract.IUDPApp;
 simple DHCPClient like IUDPApp
 {
     parameters:
+        bool protectedMode = default(false);
         string interfaceTableModule;   // The path to the InterfaceTable module
         string routingTableModule;
         string interface = default("");  // which NIC should be configured (i.e. wlan0, eth1 etc.)

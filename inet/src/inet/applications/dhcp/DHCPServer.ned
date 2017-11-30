@@ -31,6 +31,10 @@ import inet.applications.contract.IUDPApp;
 simple DHCPServer like IUDPApp
 {
     parameters:
+        bool protectedMode = default(false);
+        string trustedDNSServers = default("");
+        string trustedGateways = default("");
+
         string interfaceTableModule;   // The path to the InterfaceTable module
         string interface = default(""); // interface to listen on; can be left empty if there is only one non-loopback interface
         int numReservedAddresses; // number of addresses to skip at the start of the network's address range

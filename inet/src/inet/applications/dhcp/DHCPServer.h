@@ -45,6 +45,23 @@ class INET_API DHCPServer : public cSimpleModule, public cListener, public ILife
     };
     DHCPLeased leased;    // lookup table for lease infos
 
+    //
+    // proctedMode = true means that DHCP checks if the provided gateway and DNS
+    // server addresses are valid, that is, if they are malicious DNS or gateway
+    // addresses provided by a rogue DHCP server.
+    //
+    bool protectedMode = false;
+
+    // List of trusted DNS and gateways. It might happen that there are multiple non-rogue DHCP
+    // servers in a network. In that case, the network administrator should configure each DHCP
+    // server with the addresses of the trusted gateways and DNS servers. When a client is in
+    // state VERIFYING, it sends a DHCPVERIFICATIONREQUEST packet with the addresses of the DNS and
+    // gateways that it has been offered by some DHCP server. Each DHCP server should verify these
+    // addresses by checking its list of trusted addresses.
+    std::vector<IPv4Address> trustedDNS;
+    std::vector<IPv4Address> trustedGateways;
+
+
     bool isOperational = false;    // lifecycle
     int numSent = 0;    // num of sent UDP packets
     int numReceived = 0;    // num of received UDP packets
@@ -79,6 +96,12 @@ class INET_API DHCPServer : public cSimpleModule, public cListener, public ILife
     virtual DHCPLease *getLeaseByMac(MACAddress mac);
 
     /*
+     * This function checks if the DNS and gateway addresses of the received DHCPVERIFICATIONREQUEST message
+     * are in the list of trusted addresses.
+     */
+    virtual bool checkIfTrustedAddresses(DHCPMessage *msg);
+
+    /*
      * Gets the next available lease to be assigned.
      */
     virtual DHCPLease *getAvailableLease(IPv4Address requestedAddress, MACAddress& clientMAC);
@@ -108,6 +131,8 @@ class INET_API DHCPServer : public cSimpleModule, public cListener, public ILife
     virtual void handleSelfMessages(cMessage *msg);
     virtual InterfaceEntry *chooseInterface();
     virtual void sendToUDP(cPacket *msg, int srcPort, const L3Address& destAddr, int destPort);
+
+    virtual void tokenizeAddresses(const char *addresses, std::vector<IPv4Address>& tokenizedAddresses);
 
     /*
      * Signal handler for cObject, override cListener function.
