@@ -35,19 +35,22 @@ DHCPClient::~DHCPClient()
     cancelAndDelete(timerT2);
     cancelAndDelete(leaseTimer);
     cancelAndDelete(startTimer);
+    cancelAndDelete(protectionTimer);
     delete lease;
 }
 
 void DHCPClient::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL) {
-        protectedMode = par("protectedMode");
+        protectedMode = par("protectedMode").boolValue();
         timerT1 = new cMessage("T1 Timer", T1);
         timerT2 = new cMessage("T2 Timer", T2);
         timerTo = new cMessage("DHCP Timeout");
+        protectionTimer = new cMessage("Protection Interval Timer", PROTECTION);
         leaseTimer = new cMessage("Lease Timeout", LEASE_TIMEOUT);
         startTimer = new cMessage("Starting DHCP", START_DHCP);
         startTime = par("startTime");
+        protectionInterval = par("protectionInterval").doubleValue();
     }
     else if (stage == INITSTAGE_APPLICATION_LAYER) {
         NodeStatus *nodeStatus = dynamic_cast<NodeStatus *>(findContainingNode(this)->getSubmodule("status"));
@@ -133,6 +136,7 @@ void DHCPClient::finish()
     cancelEvent(timerT2);
     cancelEvent(leaseTimer);
     cancelEvent(startTimer);
+    cancelEvent(protectionTimer);
 }
 
 namespace {
@@ -270,6 +274,13 @@ void DHCPClient::handleTimer(cMessage *msg)
         unbindLease();
         clientState = INIT;
         initClient();
+    }
+    // protectionTimer has expired and we didn't receive DHCPNAK, bound to the offered lease
+    else if (category == PROTECTION) {
+        clientState = BOUND;
+        scheduleTimerT1();
+        scheduleTimerT2();
+        bindLease();
     }
     else
         throw cRuntimeError("Unknown self message '%s'", msg->getName());
@@ -422,6 +433,7 @@ void DHCPClient::handleDHCPMessage(DHCPMessage *msg)
             if (messageType == DHCPOFFER) {
                 EV_INFO << "DHCPOFFER message arrived in SELECTING state with IP address: " << msg->getYiaddr() << "." << endl;
                 scheduleTimerTO(WAIT_ACK);
+                scheduleProtectionTimer();
                 clientState = REQUESTING;
                 recordOffer(msg);
                 sendRequest(msg);    // we accept the first offer
@@ -437,10 +449,22 @@ void DHCPClient::handleDHCPMessage(DHCPMessage *msg)
             else if (messageType == DHCPACK) {
                 EV_INFO << "DHCPACK message arrived in REQUESTING state. The requested IP address is available in the server's pool of addresses." << endl;
                 handleDHCPACK(msg);
-                clientState = BOUND;
+                if (!protectedMode)
+                    clientState = BOUND;
             }
             else if (messageType == DHCPNAK) {
-                EV_INFO << "DHCPNAK message arrived in REQUESTING state. Restarting the configuration process." << endl;
+                if (protectedMode) {
+                    cancelEvent(protectionTimer);
+                    IPv4Address serverId = msg->getOptions().getServerIdentifier();
+                    // We received a DHCPNAK from another DHCP server, which notifies us that
+                    // we had received possibly malicious DNS and gateway addresses
+                    if (serverId != lease->serverId)
+                        EV_WARN << "DHCP server: " << lease->serverId << " notified us that the received DHCP offer might be malicious" << endl;
+                    else
+                        EV_INFO << "DHCPNAK message arrived in REQUESTING state. Restarting the configuration process." << endl;
+                }
+                else
+                    EV_INFO << "DHCPNAK message arrived in REQUESTING state. Restarting the configuration process." << endl;
                 initClient();
             }
             else {
@@ -656,9 +680,17 @@ void DHCPClient::handleDHCPACK(DHCPMessage *msg)
 {
     recordLease(msg);
     cancelEvent(timerTo);
-    scheduleTimerT1();
-    scheduleTimerT2();
-    bindLease();
+    if (!protectedMode) {
+        scheduleTimerT1();
+        scheduleTimerT2();
+        bindLease();
+    }
+}
+
+void DHCPClient::scheduleProtectionTimer()
+{
+    cancelEvent(protectionTimer);
+    scheduleAt(simTime() + protectionInterval, protectionTimer);
 }
 
 void DHCPClient::scheduleTimerTO(TimerType type)

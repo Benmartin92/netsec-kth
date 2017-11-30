@@ -39,7 +39,7 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
   protected:
     // DHCP timer types (RFC 2131 4.4.5)
     enum TimerType {
-        WAIT_OFFER, WAIT_ACK, T1, T2, LEASE_TIMEOUT, START_DHCP
+        WAIT_OFFER, WAIT_ACK, T1, T2, LEASE_TIMEOUT, START_DHCP, PROTECTION
     };
 
     //
@@ -70,6 +70,7 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
     cMessage *timerTo = nullptr;    // response timeout: WAIT_ACK, WAIT_OFFER
     cMessage *leaseTimer = nullptr;    // length of time the lease is valid
     cMessage *startTimer = nullptr;    // self message to start DHCP initialization
+    cMessage *protectionTimer = nullptr; // wait some time to receive feedback from DHCP servers (only in protected mode)
     bool isOperational = false;    // lifecycle
     ClientState clientState = INIT;    // current state
     unsigned int xid = 0;    // transaction id; to associate messages and responses between a client and a server
@@ -81,6 +82,8 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
     int numReceived = 0;    // number of received DHCP messages
     int responseTimeout = 0;    // timeout waiting for DHCPACKs, DHCPOFFERs
 
+    double protectionInterval = -1;
+
   protected:
     virtual int numInitStages() const override { return NUM_INIT_STAGES; }
     virtual void initialize(int stage) override;
@@ -89,6 +92,7 @@ class INET_API DHCPClient : public cSimpleModule, public cListener, public ILife
     virtual void scheduleTimerTO(TimerType type);
     virtual void scheduleTimerT1();
     virtual void scheduleTimerT2();
+    virtual void scheduleProtectionTimer();
     static const char *getStateName(ClientState state);
     const char *getAndCheckMessageTypeName(DHCPMessageType type);
     virtual void refreshDisplay() const override;

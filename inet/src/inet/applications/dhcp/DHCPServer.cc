@@ -49,7 +49,7 @@ void DHCPServer::initialize(int stage)
     if (stage == INITSTAGE_LOCAL) {
         startTimer = new cMessage("Start DHCP server", START_DHCP);
         startTime = par("startTime");
-        protectedMode = par("protectedMode");
+        protectedMode = par("protectedMode").boolValue();
         tokenizeAddresses(par("trustedDNSServers").stringValue(), trustedDNS);
         tokenizeAddresses(par("trustedGateways").stringValue(), trustedGateways);
     }
