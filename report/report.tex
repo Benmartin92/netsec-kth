@@ -70,10 +70,13 @@ DHCP, rogue DHCP server, DHCP authentication, DHCP spoofing, DHCP security
 %Describe the background for chosen area that is going to be investigated. Write a short description of the area that is going to be %investigated. It is a brief description of the necessary background knowledge of the problem area and for carrying out the project.
 The Dynamic Host Configuration Protocol is a widely used protocol for dynamically distributing Internet addresses \cite{dhcprfc}. DHCP works in a client-server architecture where the client (DHCP client) requests an IP address and the server (DHCP server) allocates IPs from the pool of available addresses. The communication between these two entities is unauthenticated which imposes several security issues. Rogue DHCP server can be easily set up that might offer the clients malicious default gateways or DNS servers (see \cite{dhcprfc}, DHCPOFFER message) that can lead to denial-of-service or man-in-the middle attacks. In addition, the lack of authentication allows the attacker to exhaust the pool of available addresses by continuously requesting new IPs using fake MAC addresses and request DHCP operations (e.g. DHCP lease) on behalf of other clients by fabricating DHCP messages with sniffed MAC addresses (hijacking).
 
-In this report we overview the state-of-the-art countermeasures against DHCP attacks. In Section II, we discuss the DHCP snooping technique which is a L2 security tool against DHCP hijacking and rogue DHCP servers. In Section III, we investigate the different DHCP authentication techniques with a high focus on public key cryptography. In Section IV, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers.
-\section{DHCP Snooping}
-\section{DHCP authentication methods}
-\section{A new extension: DHCP Protected Mode}
+In this report we overview the state-of-the-art countermeasures against DHCP attacks. We also introduce a new extension of the DHCP protocol that prevents man-in-the-middle attacks. In addition, we implement this extension using the open-source INET Framework \cite{inet} and run simulations in OMNeT++ \cite{Varga:2008:OOS:1416222.1416290}. The aim of the simulations is to show how DHCP vulnerabilities can lead to man-in-the-middle attacks and to demonstrate that this new extension can prevent them. The rest of the report is organized as follows.
+
+Section \ref{sec:man-in-the-middle} describes a possible man-in-the-middle attack when we use the base protocol, that is, the RFC 2131 without any additional modifications. In Section \ref{sec:dhcp-snooping}, we discuss the DHCP snooping technique which is a L2 security tool against DHCP hijacking and rogue DHCP servers. In Section \ref{sec:auth}, we investigate the different DHCP authentication techniques with a high focus on public key cryptography. In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers.
+\section{A man-in-the-middle attack}\label{sec:man-in-the-middle}
+\section{DHCP Snooping}\label{sec:dhcp-snooping}
+\section{DHCP authentication methods}\label{sec:auth}
+\section{A new extension: DHCP Protected Mode}\label{sec:protected-mode}
 
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
