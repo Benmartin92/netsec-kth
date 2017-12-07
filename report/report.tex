@@ -72,8 +72,12 @@ The Dynamic Host Configuration Protocol is a widely used protocol for dynamicall
 
 In this report we overview the state-of-the-art countermeasures against DHCP attacks. We also introduce a new extension of the DHCP protocol that prevents man-in-the-middle attacks. In addition, we implement this extension using the open-source INET Framework \cite{inet} and run simulations in OMNeT++ \cite{Varga:2008:OOS:1416222.1416290}. The aim of the simulations is to show how DHCP vulnerabilities can lead to man-in-the-middle attacks and to demonstrate that this new extension can prevent them. The rest of the report is organized as follows.
 
-Section \ref{sec:man-in-the-middle} describes a possible man-in-the-middle attack when we use the base protocol, that is, the RFC 2131 without any additional modifications. In Section \ref{sec:dhcp-snooping}, we discuss the DHCP snooping technique which is a L2 security tool against DHCP hijacking and rogue DHCP servers. In Section \ref{sec:auth}, we investigate the different DHCP authentication techniques with a high focus on public key cryptography. In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers.
-\section{A man-in-the-middle attack}\label{sec:man-in-the-middle}
+Section \ref{sec:man-in-the-middle} describes a possible man-in-the-middle attack when we use the base protocol, that is, the RFC 2131 without any additional modifications. In Section \ref{sec:dhcp-snooping}, we discuss the DHCP snooping technique which is a L2 security tool against DHCP hijacking and rogue DHCP servers. 
+
+In Section \ref{sec:auth}, we investigate the different DHCP authentication techniques with a high focus on public key cryptography.
+
+In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers. The main advantage of our extension that it does not require any pre-configuration unlike the different DHCP authentication extensions but it performs a verification where each DHCPREQUEST should be approved by all DHCP severs in the network. This makes it possible using this extension where the pre-configuration of the user's device is impossible such as in a WiFi hotspot.
+ 
 \section{DHCP Snooping}\label{sec:dhcp-snooping}
 \section{DHCP authentication methods}\label{sec:auth}
 \section{A new extension: DHCP Protected Mode}\label{sec:protected-mode}
