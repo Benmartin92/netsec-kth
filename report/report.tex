@@ -93,11 +93,17 @@ In what follows I would like demonstrate a possible man-in-the-middle attack car
 From the above example we can see that it is very easy to carry out man-in-the-middle attacks with the help of rogue DHCP servers. The main problem is that the user cannot decide whether the received DHCP configuration parameters are valid or not. If the user's DHCP client had known that the DHCP packets were coming from an untrusted server, it could drop them immediately providing security to the user.
 \section{DHCP Snooping}\label{sec:dhcp-snooping}
 \section{DHCP authentication methods}\label{sec:auth}
+To increase DHCP security, RFC 3118 \cite{dhcpauthrfc} introduced a DHCP message authentication called delayed authentication that is based on the HMAC protocol \cite{hmac} using MD5 hash. In this protocol, the sender computes a so-called configuration token which is the part of the new authentication option field that extends the old DHCP message format. This token holds a Secret ID and a HMAC-MD5 hash. The Secret ID identifies the secret key that has been used to generate the HMAC-MD5 hash for the particular message. The input of the HMAC-MD5 generation algorithm includes the DHCP message header and the options field as well.
 
-TODO: \cite{7208238} and \cite{6866756}
+At the receiver side, to validate the incoming message, the receiver recomputes the HMAC-MD5 using the secret key identified by the Secret ID. If the two hashes match, the message will be considered authenticated otherwise the message must be discarded. Even though this extension provides higher security, it has never been widely adopted. From our point of view, the main drawback of this approach is that it requires pre-shared secret keys at both client and server side.
 
+In \cite{6866756} an authentication method using digital certificates has been introduced. It uses the same message format as introduced in \cite{dhcpauthrfc}. Each DHCP message sent is signed with the sender's private key which is applied over the whole DHCP message, except the \textit{hops, giaddr, Signature Length} and \textit{DHCP Message Signature} fields. After that the receiver verifies the received message using the public key associated with the sender. The drawback of this approach is the same as it was for RFC 3118 since the distribution of the digital certificates is cumbersome.
+
+TODO:  \cite{7208238}
+
+Even though these approaches use techniques from cryptography, it is worth noting that the DHCP communication is not encrypted, they only employ authentication between the client and server. 
 \section{A new extension: DHCP Protected Mode}\label{sec:protected-mode}
-DHCP protected mode is an extension of the existing (RFC 2131) DHCP protocol. The basic idea is that every DHCP server verifies each DHCPREQUEST packet with a DHCPACK and can signal a warning with a DHCPNAK if the DHCPREQUEST packet contains some untrusted information such as unknown DNS or default gateway addresses that are not in the list of trusted addresses of the DCHP server. The fact that each DHCPREQUEST packet is being sent to the broadcast address gives the opportunity to each DHCP server to examine its content and therefore it can alert the DHCP client to a possible attack by sending a DHCPNAK.
+DHCP protected mode is an extension of the existing (RFC 2131) DHCP protocol. The basic idea is that every DHCP server is able to invalidate a DHCPREQUEST packet by sending a DHCPNAK if the DHCPREQUEST packet contains some untrusted information such as unknown DNS or default gateway addresses that are not in the list of trusted addresses of the DCHP server. The fact that each DHCPREQUEST packet is being sent to the broadcast address gives the opportunity to each DHCP server to examine its content and therefore it can alert the DHCP client to a possible attack by sending a DHCPNAK.
 
 This extension has been implemented in the INET Framework as an optional feature in DHCP. The source code is open-source and available at \url{https://github.com/Benmartin92/netsec-kth}.
 
@@ -123,7 +129,7 @@ network ANSSManInTheMiddle
         Eth100M <--> ap.ethg++;
 }
 \end{verbatim}
-When the DHCPOFFER arrives at the \textit{client} and protected mode is off, it accepts the offer immediately by sending a DHCPREQUEST with the received configuration parameters and starts communication via \textit{rogueGateway}.
+When the DHCPOFFER arrives at the \textit{client} and protected mode is off, it accepts the offer immediately by sending a DHCPREQUEST with the received configuration parameters and when it starts its ping application, it can be seen that the communication goes through \textit{rogueGateway}.
 
 However, if we turn on the protected mode, the DHCPREQUEST sent by \textit{client} will be investigated by \textit{dhcpServer} which has the list of trusted gateway addresses. Even though \textit{rougeDHCPServer} acknowledges the request by sending a DHCPACK, \textit{client} will not start using the network (in contrary to \cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 5.) until its \texttt{protectionInterval} times out. This time window that can be configured by the network administrator gives the chance to the trusted servers to send a DHCPNAK if the gateway address is not in their whitelist. If the DHCP client receives at least one DHCPNAK within this interval, it will not start communicating with the default gateway but it will notify the user and restart the DHCP process by sending a DHCPDISCOVER.
 
