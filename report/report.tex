@@ -93,6 +93,9 @@ In what follows I would like demonstrate a possible man-in-the-middle attack car
 From the above example we can see that it is very easy to carry out man-in-the-middle attacks with the help of rogue DHCP servers. The main problem is that the user cannot decide whether the received DHCP configuration parameters are valid or not. If the user's DHCP client had known that the DHCP packets were coming from an untrusted server, it could drop them immediately providing security to the user.
 \section{DHCP Snooping}\label{sec:dhcp-snooping}
 \section{DHCP authentication methods}\label{sec:auth}
+
+TODO: \cite{7208238} and \cite{6866756}
+
 \section{A new extension: DHCP Protected Mode}\label{sec:protected-mode}
 DHCP protected mode is an extension of the existing (RFC 2131) DHCP protocol. The basic idea is that every DHCP server verifies each DHCPREQUEST packet with a DHCPACK and can signal a warning with a DHCPNAK if the DHCPREQUEST packet contains some untrusted information such as unknown DNS or default gateway addresses that are not in the list of trusted addresses of the DCHP server. The fact that each DHCPREQUEST packet is being sent to the broadcast address gives the opportunity to each DHCP server to examine its content and therefore it can alert the DHCP client to a possible attack by sending a DHCPNAK.
 
