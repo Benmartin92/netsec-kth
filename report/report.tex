@@ -29,11 +29,13 @@
 \setlength{\headheight}{15.2pt}
 \usepackage[]{algorithm2e}
 \usepackage{url}
+\usepackage{graphicx}
 
 \newtheorem{thm}{Theorem}
 \newtheorem{lem}{Lemma}
 \newtheorem{defi}{Definition}
 \newtheorem{prop}{Proposition}
+\usepackage{listings}
 
 \title{\LARGE \bf
 %modif
@@ -79,12 +81,12 @@ In Section \ref{sec:auth}, we investigate the different DHCP authentication tech
 In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers. The main advantage of our extension that it does not require any pre-configuration unlike the different DHCP authentication extensions but it performs a verification where each DHCPREQUEST should be approved by all DHCP servers in the network. This makes it possible using this extension where the pre-configuration of the user's device is impossible such as in a WiFi hotspot.
  
 \section{A man-in-the-middle attack with a rogue DHCP server}\label{sec:man-in-the-middle}
-Man-in-the middle attacks happen when the communication between the network devices is intercepted by an untrusted entity (e.g. DNS server, default gateway). Although they provide the same services as their trusted counterparts to deceive the users, they can alter (e.g. DNS server) and eavesdrop (e.g. default gateway) the communication.
+Man-in-the middle attacks happen when the communication between the network devices is intercepted by an untrusted entity (e.g. DNS server, default gateway). Although they provide the same services as their trusted counterparts to deceive the users, they can alter (e.g. DNS server) and eavesdrop on (e.g. default gateway) the communication.
 
 In what follows I would like demonstrate a possible man-in-the-middle attack carried out by an untrusted default gateway with the a help of a rogue DHCP server. Let us assume that the user connects to a regular IEEE 802.11 access point in a restaurant. The main steps of the attack are as follows:
 \begin{enumerate}
-\item Once the user's device is connected to the access point (L2 connection), the DHCP client initiates the IP address allocation process by broadcasting a DHCPDISCOVER message (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 1.). Assume that the attacker has implemented a rogue DHCP server that acts like a usual DHCP server, the only exception that it provides untrusted default gateway address. This untrusted gateway implemented by the attacker provides Internet access to deceive the user. The user will not be suspicious as he will have stable Internet access, however, the attacker can eavesdrop the outgoing user data-flow at the untrusted default gateway.
-\item When the DHCPDISCOVER arrives at the DHCP servers, they may reply with a DHCPOFFER message (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 2.). In the DHCPOFFER packet each server offers an available IP address and includes gateway and DNS addresses in the packet's options field. Let us assume that the rogue DHCP server offers an untrusted gateway address to the user. This untrusted gateway provides Internet access and it is eavesdropping the user communication gaining access to sensitive data such as passwords.
+\item Once the user's device is connected to the access point (L2 connection), the DHCP client initiates the IP address allocation process by broadcasting a DHCPDISCOVER message (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 1.). Assume that the attacker has implemented a rogue DHCP server that acts like a usual DHCP server, the only exception that it provides untrusted default gateway address. This untrusted gateway implemented by the attacker provides Internet access to deceive the user. The user will not be suspicious as he will have stable Internet access, however, the attacker can eavesdrop on the outgoing user data-flow at the untrusted default gateway.
+\item When the DHCPDISCOVER arrives at the DHCP servers, they may reply with a DHCPOFFER message (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 2.). In the DHCPOFFER packet each server offers an available IP address and includes gateway and DNS addresses in the packet's options field. Let us assume that the rogue DHCP server offers an untrusted gateway address to the user. This untrusted gateway provides Internet access and it is eavesdropping on the user communication gaining access to sensitive data such as passwords.
 \item Let us assume that the rogue DHCP sever is faster in the sense that its DHCPOFFER arrives faster than the trusted one. RFC 2131 does not define what to do when there are multiple responses, the user can wait for more responses or can accept the first offer (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 3.). Let us assume that the DHCP client accepts the first reply. In this case, the user broadcasts a DHCPREQUEST packet with the configuration information provided in the offer. After that the rogue DHCP server acknowledges the request by sending a DHCPACK (\cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 4.).
 \item Finally, the clients start communicating using the untrusted default gateway.
 \end{enumerate}
@@ -92,7 +94,37 @@ From the above example we can see that it is very easy to carry out man-in-the-m
 \section{DHCP Snooping}\label{sec:dhcp-snooping}
 \section{DHCP authentication methods}\label{sec:auth}
 \section{A new extension: DHCP Protected Mode}\label{sec:protected-mode}
+DHCP protected mode is an extension of the existing (RFC 2131) DHCP protocol. The basic idea is that every DHCP server verifies each DHCPREQUEST packet with a DHCPACK and can signal a warning with a DHCPNAK if the DHCPREQUEST packet contains some untrusted information such as unknown DNS or default gateway addresses that are not in the list of trusted addresses of the DCHP server. The fact that each DHCPREQUEST packet is being sent to the broadcast address gives the opportunity to each DHCP server to examine its content and therefore it can alert the DHCP client to a possible attack by sending a DHCPNAK.
 
+This extension has been implemented in the INET Framework as an optional feature in DHCP. The source code is open-source and available at \url{https://github.com/Benmartin92/netsec-kth}.
+
+To experiment with the implementation we have built a simulation scenario (see Fig. \ref{fig:topology}) that consists of a \textit{client} who requests an IP address and two DHCP servers; one of them (\textit{rogueDHCPServer)} attempts to provide untrusted default gateway address (\textit{rogueGateway}) where the outgoing user data is being eavesdropped on by the attacker. The simulation files can be found at \texttt{inet/examples/anssdhcp} in the GitHub repository. In Section \ref{sec:man-in-the-middle} 3), we assumed that the rogue DHCP server is faster, that is, its responses arrive first at the client. We simulate this assumption by implementing a faster link between the access point (\textit{ap}) and \textit{rougeDHCPServer} as you can see from the following code snippet (for more details, see \texttt{ANSSManInTheMiddle.ned}).
+\begin{figure*}
+\centering
+\includegraphics[scale=0.4]{figures/topology.png}
+\caption{Man-in-the-middle attack simulation topology with a rogue DHCP server}\label{fig:topology}
+\end{figure*}
+\begin{verbatim}
+network ANSSManInTheMiddle
+{
+	...
+    connections:
+        gateway.pppg++ <--> 
+        Eth100M <--> Internet.pppg++;
+        gateway.ethg++ <--> 
+        Eth100M <--> ap.ethg++;
+        rogueGateway.pppg++ <--> 
+        Eth100M <--> Internet.pppg++;
+        remoteServer.pppg++ <--> 
+        Eth100M <--> Internet.pppg++;
+        dhcpServer.ethg++ <--> 
+        Eth100M <--> ap.ethg++;
+        rogueDHCPServer.ethg++ <--> 
+        Eth1G <--> ap.ethg++;
+        rogueGateway.ethg++ <--> 
+        Eth100M <--> ap.ethg++;
+}
+\end{verbatim}
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
                                   % the textheight of the last page by a suitable amount.
