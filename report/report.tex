@@ -46,14 +46,19 @@ On the vulnerabilities of the DHCP protocol
 % \thanks{*This work was not supported by any organization}% <-this % stops a space
 \thanks{$^{1}$ e-mail: seregi@kth.se}%
 }
+\fancypagestyle{firstpage}{%
+    \fancyhf{}
+	\chead{KTH Royal Institute of Technology | EP2510, Fall 2017, Period 2 | \today}
+	\cfoot{\thepage}
+}
 
 \begin{document}
 
 
 \maketitle
-\thispagestyle{fancy}
-\fancyhf{}
-\chead{KTH Royal Institute of Technology | EP2510, Fall 2017, Period 2 | \today}
+\thispagestyle{firstpage}
+\pagestyle{plain}
+\cfoot{\thepage}
 
 \begin{abstract}
 The Dynamic Host Configuration Protocol (DHCP) is a widely used protocol for dynamically distributing Internet (IP) addresses. The protocol is also responsible for the dynamic distribution of the Domain Name System (DNS) server and gateway addresses. Due its unauthenticated communication, man-in-the-middle attacks can be carried out by rogue DHCP servers providing malicious DNS or gateway addresses. In this report we investigate the state-of-the-art techniques that mitigate DHCP attacks and we propose a new extension of the DHCP protocol that protects against rogue DHCP servers. In addition, we implement this extension using the INET Framework and run simulations in OMNeT++.
