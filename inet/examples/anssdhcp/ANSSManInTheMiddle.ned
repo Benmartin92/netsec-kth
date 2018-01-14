@@ -30,12 +30,14 @@ import inet.physicallayer.ieee80211.packetlevel.Ieee80211ScalarRadioMedium;
 
 network ANSSManInTheMiddle
 {
-    @display("bgb=1135.872,607.104;bgl=2");
+    parameters:
+        int numHosts;
+        @display("bgb=1135.872,607.104;bgl=2");
     submodules:
         radioMedium: Ieee80211ScalarRadioMedium {
-            @display("p=64,34");
+            @display("p=89.69624,32.74625");
         }
-        client: WirelessHost {
+        client[numHosts]: WirelessHost {
             @display("p=64,124");
         }
         ap: AccessPoint {
@@ -57,7 +59,7 @@ network ANSSManInTheMiddle
             @display("p=345.168,427.176");
         }
         configurator: IPv4NetworkConfigurator {
-            @display("p=180,35");
+            @display("p=223.52875,32.74625");
         }
         Internet: InternetCloud {
             @display("p=752.76,211.752;is=vl");
@@ -67,8 +69,8 @@ network ANSSManInTheMiddle
         gateway.ethg++ <--> Eth100M <--> ap.ethg++;
         rogueGateway.pppg++ <--> Eth100M <--> Internet.pppg++;
         remoteServer.pppg++ <--> Eth100M <--> Internet.pppg++;
-        dhcpServer.ethg++ <--> Eth100M <--> ap.ethg++;
-        rogueDHCPServer.ethg++ <--> Eth1G <--> ap.ethg++;
+        dhcpServer.ethg++ <--> Eth1G <--> ap.ethg++;
+        rogueDHCPServer.ethg++ <--> Eth100M <--> ap.ethg++;
         rogueGateway.ethg++ <--> Eth100M <--> ap.ethg++;
 }
 
