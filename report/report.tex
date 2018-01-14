@@ -83,7 +83,9 @@ Section \ref{sec:man-in-the-middle} describes a possible man-in-the-middle attac
 
 In Section \ref{sec:auth}, we investigate the different DHCP authentication techniques with a high focus on public key cryptography.
 
-In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers. The main advantage of our extension that it does not require any pre-configuration unlike the different DHCP authentication extensions but it performs a verification where each DHCPREQUEST should be approved by all DHCP servers in the network. This makes it possible using this extension where the pre-configuration of the user's device is impossible such as in a WiFi hotspot.
+In Section \ref{sec:protected-mode}, we introduce a possible extension of the existing DHCP implementation that protects against rogue DHCP servers. The main advantage of our extension that it does not require any pre-configuration unlike the different DHCP authentication extensions but it performs a verification where each DHCPREQUEST should be approved by all DHCP servers in the network. This makes it possible using this extension where the pre-configuration of the user's device is impossible such as in a WiFi hotspot. 
+
+In Section \ref{sec:benchmark} we investigate if there is some performance difference between our solution and the unmodified DHCP protocol.
  
 \section{A man-in-the-middle attack with a rogue DHCP server}\label{sec:man-in-the-middle}
 Man-in-the middle attacks happen when the communication between the network devices is intercepted by an untrusted entity (e.g. DNS server, default gateway). Although they provide the same services as their trusted counterparts to deceive the users, they can alter (e.g. DNS server) and eavesdrop on (e.g. default gateway) the communication.
@@ -157,7 +159,7 @@ The drawbacks of this extension:
 \item A rogue DHCP server can repeat the attack (as described in Section \ref{sec:protected-mode}) arbitrary times, that is, there is no such a mechanism implemented that prevents the communication of a rogue DHCP server. By repeating the same attack, the rogue DHCP server can carry out DoS attacks. However, it is still better than being eavesdropped on.
 \item A rogue DHCP server can DHCPNAK valid gateway addresses, however, this is still better than being eavesdropped on.
 \end{itemize}
-\section{Performance analysis of DHCP Protected Mode}
+\section{Performance analysis of DHCP Protected Mode}\label{sec:benchmark}
 It has been mentioned in Section \ref{sec:protected-mode} that in protected mode the DHCP clients should wait up to \texttt{protectionInterval} seconds before it enters to state BOUND from state REQUESTING (\cite{dhcprfc} Figure 5:  State-transition diagram for DHCP clients). This time interval should give enough time to the DHCP servers to notify the victims if there has been an attack. In what follows we measure how much time is required to obtain an IP address when protected mode is turned on and there are multiple nodes in the network compared to the unmodified DHCP protocol.
 
 We ran several experiments with increasing number of network nodes and the results justified our assumption, that is, the overhead introduced by the protected mode is negligible.
