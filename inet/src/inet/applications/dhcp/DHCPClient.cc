@@ -277,6 +277,7 @@ void DHCPClient::handleTimer(cMessage *msg)
     }
     // protectionTimer has expired and we didn't receive DHCPNAK, bound to the offered lease
     else if (category == PROTECTION) {
+        EV_INFO << "Protection timer expired without DHCPNAK." << endl;
         clientState = BOUND;
         scheduleTimerT1();
         scheduleTimerT2();
