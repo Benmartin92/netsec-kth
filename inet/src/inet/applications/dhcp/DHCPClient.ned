@@ -32,7 +32,7 @@ simple DHCPClient like IUDPApp
 {
     parameters:
         bool protectedMode = default(false);
-        double protectionInterval @unit(ms) = default(1s);
+        double protectionInterval @unit(s) = default(1s);
 
         string interfaceTableModule;   // The path to the InterfaceTable module
         string routingTableModule;
