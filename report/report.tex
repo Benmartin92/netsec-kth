@@ -139,7 +139,7 @@ network ANSSManInTheMiddle
 \end{verbatim}
 When the DHCPOFFER arrives at the \textit{client} and protected mode is off, it accepts the offer immediately by sending a DHCPREQUEST with the received configuration parameters and when it starts its ping application, it can be seen that the communication goes through \textit{rogueGateway}.
 
-However, if we turn on the protected mode, the DHCPREQUEST sent by \textit{client} will be investigated by \textit{dhcpServer} which has the list of trusted gateway addresses. Even though \textit{rougeDHCPServer} acknowledges the request by sending a DHCPACK, \textit{client} will not start using the network (in contrary to \cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 5.) until its \texttt{protectionInterval} times out. This time window that can be configured by the network administrator gives the chance to the trusted servers to send a DHCPNAK if the gateway address is not in their whitelist. If the DHCP client receives at least one DHCPNAK within this interval, it will not start communicating with the default gateway but it will notify the user and restart the DHCP process by sending a DHCPDISCOVER.
+However, if we turn on the protected mode, the DHCPREQUEST sent by \textit{client} will be investigated by \textit{dhcpServer} which has the list of trusted gateway addresses. Even though \textit{rougeDHCPServer} acknowledges the request by sending a DHCPACK, \textit{client} will not start using the network (in contrary to \cite{dhcprfc} 3.1 Client-server interaction - allocating a network address, 5.) until its \texttt{protectionInterval} times out that is $1$s by default. This time window that can be configured by the network administrator gives the chance to the trusted servers to send a DHCPNAK if the gateway address is not in their whitelist. If the DHCP client receives at least one DHCPNAK within this interval, it will not start communicating with the default gateway but it will notify the user and restart the DHCP process by sending a DHCPDISCOVER.
 
 Advantages of this extension:
 \begin{itemize}
@@ -157,6 +157,27 @@ The drawbacks of this extension:
 \item A rogue DHCP server can repeat the attack (as described in Section \ref{sec:protected-mode}) arbitrary times, that is, there is no such a mechanism implemented that prevents the communication of a rogue DHCP server. By repeating the same attack, the rogue DHCP server can carry out DoS attacks. However, it is still better than being eavesdropped on.
 \item A rogue DHCP server can DHCPNAK valid gateway addresses, however, this is still better than being eavesdropped on.
 \end{itemize}
+\section{Performance analysis of DHCP Protected Mode}
+It has been mentioned in Section \ref{sec:protected-mode} that in protected mode the DHCP clients should wait up to \texttt{protectionInterval} seconds before it enters to state BOUND from state REQUESTING (\cite{dhcprfc} Figure 5:  State-transition diagram for DHCP clients). This time interval should give enough time to the DHCP servers to notify the victims if there has been an attack. In what follows we measure how much time is required to obtain an IP address when protected mode is turned on and there are multiple nodes in the network compared to the unmodified DHCP protocol.
+
+We ran several experiments with increasing number of network nodes and the results justified our assumption, that is, the overhead introduced by the protected mode is negligible.
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{ |c|c|c| } 
+ \hline
+ Number of nodes & DHCP & DHCP Protected Mode \\ 
+ \hline
+ 10 & 0.64s & 1.64s \\ 
+ \hline
+ 20 & 0.69s & 1.69s \\ 
+ \hline
+ 40 & 0.69s & 1.69s \\ 
+ \hline
+\end{tabular}
+\end{center}
+\caption{Overall time taken to obtain an IP address for all network nodes}
+\end{table}
+We can see that DHCP Protected Mode took more time to obtain the addresses however this is just the time of the \texttt{protectionInterval} which is $1$ second by default.
 \addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
                                   % on the last page of the document manually. It shortens
                                   % the textheight of the last page by a suitable amount.
